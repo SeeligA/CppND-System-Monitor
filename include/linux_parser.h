@@ -41,6 +41,7 @@ enum CPUStates {
   kGuestNice_
 };
 std::vector<std::string> CpuUtilization();
+std::vector<std::string> CpuUtilization(int pid);
 long Jiffies();
 long ActiveJiffies();
 long ActiveJiffies(int pid);
@@ -49,7 +50,7 @@ long IdleJiffies();
 // Processes
 std::string Command(int pid);
 std::string Ram(int pid);
-std::string Uid(int pid);
+// Used Lambda instead to look up both UID and GID.
 std::string User(int pid);
 long int UpTime(int pid);
 };  // namespace LinuxParser
