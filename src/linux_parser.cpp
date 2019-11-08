@@ -2,16 +2,19 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
-//
+
 #include <cmath>
 #include <algorithm>
+#include <experimental/filesystem>
 
 #include "linux_parser.h"
 
+namespace fs = std::experimental::filesystem;
 using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+
 
 // DONE: An example of how to read data from the filesystem
 string LinuxParser::OperatingSystem() {
@@ -43,30 +46,47 @@ string LinuxParser::Kernel() {
   std::ifstream stream(kProcDirectory + kVersionFilename);
   if (stream.is_open()) {
     std::getline(stream, line);
-    std::istringstream linestream(line);
-    // added version token to parse actual kernel string
+    std::istringstream linestream(line);    
     linestream >> os >> version >> kernel;
   }
   return kernel;
 }
 
 // BONUS: Update this to use std::filesystem
+// Note: I've added the filesystem library to CMakeLists.txt.
 vector<int> LinuxParser::Pids() {
-  vector<int> pids;
-  DIR* directory = opendir(kProcDirectory.c_str());
-  struct dirent* file;
-  while ((file = readdir(directory)) != nullptr) {
-    // Is this a directory?
-    if (file->d_type == DT_DIR) {
-      // Is every character of the name a digit?
-      string filename(file->d_name);
-      if (std::all_of(filename.begin(), filename.end(), isdigit)) {
-        int pid = stoi(filename);
-        pids.push_back(pid);
+  std::vector<int> pids;
+  std::string path, dir;
+  int pid;
+  
+  for (auto& p: fs::directory_iterator(kProcDirectory)) {
+    if (fs::is_directory(p)) {
+      path = fs::path(p);
+      std::replace(path.begin(), path.end(), '/', ' ');
+      std::istringstream stream(path);
+      while (stream >> dir >> pid) {
+        pids.push_back(pid);        
       }
     }
   }
-  closedir(directory);
+  // Uncomment to use starter code instead.
+  //vector<int> pids;
+  //std::string path;
+  // DIR* directory = opendir(kProcDirectory.c_str());
+  // struct dirent* file;
+  // while ((file = readdir(directory)) != nullptr) {
+  //   // Is this a directory?
+  //   if (file->d_type == DT_DIR) {
+  //     // Is every character of the name a digit?
+  //     string filename(file->d_name);
+  //     if (std::all_of(filename.begin(), filename.end(), isdigit)) {
+  //       int pid = stoi(filename);
+  //       pids.push_back(pid);
+  //     }
+  //   }
+  // }
+  // closedir(directory);
+  
   return pids;
 }
 
@@ -165,7 +185,6 @@ int LinuxParser::RunningProcesses() {
 }
 
 // DONE: Read and return the command associated with a process
-// REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Command(int pid) { 
   string line;
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kCmdlineFilename);
@@ -177,7 +196,6 @@ string LinuxParser::Command(int pid) {
 }
 
 // DONE: Read and return the memory used by a process
-// REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Ram(int pid) { 
   string mem, line, key;
   int value;
@@ -195,15 +213,14 @@ string LinuxParser::Ram(int pid) {
     }
   return mem; 
 }
-
+/* Used Lambda instead to look up both UID and GID.
 // DONE: Read and return the user ID associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
-// Used Lambda instead to look up both UID and GID.
 //string LinuxParser::Uid(int pid[[maybe_unused]]) { return string(); }
 
 // TODO: Read and return the user associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
-
+*/
 string LinuxParser::User(int pid) { 
   string user, line, key, s;
   string uid, gid, value, value2;
@@ -237,7 +254,6 @@ string LinuxParser::User(int pid) {
 }  
 
 // DONE: Read and return the uptime of a process
-// REMOVE: [[maybe_unused]] once you define the function
 long LinuxParser::UpTime(int pid) { 
   std::string line, clockticks;  
   

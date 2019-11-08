@@ -41,7 +41,9 @@ void Process::SetCpuUtilization () {
     seconds = uptime - (starttime / sysconf(_SC_CLK_TCK));
     if (seconds <= 0) { cpu_usage_ = 0.0;}
     else {
-        total_time = utime + stime + cutime + cstime;       
+        total_time = utime + stime;
+        // Uncomment this line to include children processes
+        // total_time = utime + stime + cutime + cstime;
         cpu_usage_ = ((total_time /  sysconf(_SC_CLK_TCK)) / float(seconds));
     }    
 }
